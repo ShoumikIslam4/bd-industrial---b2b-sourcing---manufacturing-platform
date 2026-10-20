@@ -15,9 +15,37 @@ services:
       - VITE_FIREBASE_PROJECT_ID=bd-industrial-prod
       - VITE_PLATFORM_CURRENCY=BDT
       - VITE_DEFAULT_LANGUAGE=en
+      - DATABASE_URL=postgresql://bd_user:bd_secure_password_2026@postgres:5432/bd_industrial
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 20s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: bd_industrial_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bd_industrial
+      POSTGRES_USER: bd_user
+      POSTGRES_PASSWORD: bd_secure_password_2026
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bd_user -d bd_industrial"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+    driver: local

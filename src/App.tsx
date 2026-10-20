@@ -33,6 +33,12 @@ function AppContent() {
   const [rfqPrefillTitle, setRfqPrefillTitle] = useState('');
   const [rfqPrefillCategory, setRfqPrefillCategory] = useState('garments');
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState<'general' | 'admin'>('general');
+
+  const handleOpenAuthModal = (tab: 'general' | 'admin' = 'general') => {
+    setAuthModalTab(tab);
+    setAuthModalOpen(true);
+  };
 
   // Sync route on browser navigation or programmatic
   const handleNavigate = (route: string) => {
@@ -178,7 +184,7 @@ function AppContent() {
           currentRoute={currentRoute}
           onNavigate={handleNavigate}
           onOpenRFQModal={() => handleOpenRFQModal()}
-          onOpenAuthModal={() => setAuthModalOpen(true)}
+          onOpenAuthModal={handleOpenAuthModal}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           selectedCategory={selectedCategory}
@@ -206,6 +212,8 @@ function AppContent() {
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
+        defaultTab={authModalTab}
+        onAdminLoginSuccess={() => handleNavigate('/admin')}
       />
     </div>
   );
