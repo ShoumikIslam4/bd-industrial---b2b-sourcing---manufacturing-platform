@@ -1,0 +1,136 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "System user profile with role-based access",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "name": { "type": "string", "maxLength": 128 },
+        "role": { "type": "string", "enum": ["superadmin", "admin", "supplier", "buyer"] },
+        "companyName": { "type": "string", "maxLength": 256 },
+        "phone": { "type": "string", "maxLength": 64 },
+        "location": { "type": "string", "maxLength": 256 },
+        "status": { "type": "string", "enum": ["active", "pending", "suspended"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "email", "name", "role", "companyName", "status"]
+    },
+    "Supplier": {
+      "title": "Supplier",
+      "description": "Verified manufacturer or industrial supplier profile",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "companyName": { "type": "string", "maxLength": 256 },
+        "businessType": { "type": "string", "enum": ["Manufacturer", "Wholesaler", "Exporter", "Industrial Supplier"] },
+        "factoryLocation": { "type": "string", "maxLength": 256 },
+        "industrialZone": { "type": "string", "maxLength": 128 },
+        "verified": { "type": "boolean" },
+        "rating": { "type": "number" },
+        "contactEmail": { "type": "string", "maxLength": 256 }
+      },
+      "required": ["id", "companyName", "businessType", "factoryLocation", "verified"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Wholesale product listing with tiered pricing and specifications",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "supplierId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 256 },
+        "category": { "type": "string", "maxLength": 64 },
+        "moq": { "type": "number" },
+        "leadTimeDays": { "type": "number" },
+        "stockStatus": { "type": "string", "enum": ["made_to_order", "in_stock", "low_stock"] }
+      },
+      "required": ["id", "supplierId", "title", "category", "moq"]
+    },
+    "RFQ": {
+      "title": "RFQ",
+      "description": "Request for quotation submitted by a buyer",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "buyerId": { "type": "string", "maxLength": 128 },
+        "buyerCompany": { "type": "string", "maxLength": 256 },
+        "title": { "type": "string", "maxLength": 256 },
+        "targetQuantity": { "type": "number" },
+        "status": { "type": "string", "enum": ["open", "quotes_received", "assigned", "in_production", "completed", "cancelled"] }
+      },
+      "required": ["id", "buyerId", "title", "targetQuantity", "status"]
+    },
+    "Quotation": {
+      "title": "Quotation",
+      "description": "Supplier quotation for an RFQ",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "rfqId": { "type": "string", "maxLength": 128 },
+        "supplierId": { "type": "string", "maxLength": 128 },
+        "buyerId": { "type": "string", "maxLength": 128 },
+        "unitPriceBDT": { "type": "number" },
+        "totalAmountBDT": { "type": "number" },
+        "status": { "type": "string", "enum": ["submitted", "accepted", "rejected", "revised"] }
+      },
+      "required": ["id", "rfqId", "supplierId", "buyerId", "unitPriceBDT", "totalAmountBDT", "status"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Production order record with milestones",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "rfqId": { "type": "string", "maxLength": 128 },
+        "buyerId": { "type": "string", "maxLength": 128 },
+        "supplierId": { "type": "string", "maxLength": 128 },
+        "totalAmountBDT": { "type": "number" },
+        "currentMilestone": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "rfqId", "buyerId", "supplierId", "totalAmountBDT", "currentMilestone"]
+    },
+    "WebsiteConfig": {
+      "title": "WebsiteConfig",
+      "description": "Global visual builder configuration and theme settings",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles with role and company information"
+    },
+    "/suppliers/{supplierId}": {
+      "schema": { "$ref": "#/entities/Supplier" },
+      "description": "Verified manufacturer company profiles and facilities"
+    },
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Industrial product listings with tiered pricing and technical specs"
+    },
+    "/rfqs/{rfqId}": {
+      "schema": { "$ref": "#/entities/RFQ" },
+      "description": "Buyer requests for quotation"
+    },
+    "/quotations/{quotationId}": {
+      "schema": { "$ref": "#/entities/Quotation" },
+      "description": "Manufacturer quotations for buyer RFQs"
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Active production orders and milestone status"
+    },
+    "/website_config/{configId}": {
+      "schema": { "$ref": "#/entities/WebsiteConfig" },
+      "description": "Admin visual builder theme, hero, and section order configurations"
+    }
+  }
+}

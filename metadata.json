@@ -1,0 +1,6 @@
+{
+  "name": "BD-Industrial — B2B Sourcing & Manufacturing Platform",
+  "description": "Production-grade B2B manufacturing and wholesale sourcing platform for Bangladesh connecting verified manufacturers, industrial suppliers, distributors, and global/local enterprise buyers with dynamic visual website builder and admin control panel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

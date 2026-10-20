@@ -1,0 +1,131 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email == "info.soumikk@gmail.com" ||
+        request.auth.token.email == "admin@bdsource.com.bd"
+      );
+    }
+
+    // Public readable products
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if isSignedIn() && isValidId(productId) && (
+        isAdmin() || (incoming().supplierId == request.auth.uid)
+      );
+      allow update: if isSignedIn() && isValidId(productId) && (
+        isAdmin() || (existing().supplierId == request.auth.uid && incoming().supplierId == existing().supplierId)
+      );
+      allow delete: if isSignedIn() && isValidId(productId) && (
+        isAdmin() || existing().supplierId == request.auth.uid
+      );
+    }
+
+    // Verified suppliers directory
+    match /suppliers/{supplierId} {
+      allow read: if true;
+      allow create, update: if isSignedIn() && isValidId(supplierId) && (
+        isAdmin() || (existing().userId == request.auth.uid && incoming().userId == existing().userId)
+      );
+      allow delete: if isAdmin() && isValidId(supplierId);
+    }
+
+    // Users and profiles
+    match /users/{userId} {
+      allow read: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow create: if isSignedIn() && isOwner(userId) && isValidId(userId);
+      allow update: if isSignedIn() && (
+        isAdmin() || (isOwner(userId) && !incoming().diff(existing()).affectedKeys().hasAny(['role']))
+      );
+      allow delete: if isAdmin() && isValidId(userId);
+    }
+
+    // Requests for Quotation (RFQs)
+    match /rfqs/{rfqId} {
+      allow read: if isSignedIn() && (
+        isAdmin() || resource.data.buyerId == request.auth.uid || resource.data.status == 'open'
+      );
+      allow create: if isSignedIn() && isValidId(rfqId) && incoming().buyerId == request.auth.uid;
+      allow update: if isSignedIn() && isValidId(rfqId) && (
+        isAdmin() || (existing().buyerId == request.auth.uid && incoming().buyerId == existing().buyerId)
+      );
+      allow delete: if isAdmin() && isValidId(rfqId);
+    }
+
+    // Quotations
+    match /quotations/{quotationId} {
+      allow read: if isSignedIn() && (
+        isAdmin() || resource.data.buyerId == request.auth.uid || resource.data.supplierId == request.auth.uid
+      );
+      allow create: if isSignedIn() && isValidId(quotationId) && (
+        isAdmin() || incoming().supplierId == request.auth.uid
+      );
+      allow update: if isSignedIn() && isValidId(quotationId) && (
+        isAdmin() || (existing().supplierId == request.auth.uid) || (existing().buyerId == request.auth.uid)
+      );
+      allow delete: if isAdmin() && isValidId(quotationId);
+    }
+
+    // Orders
+    match /orders/{orderId} {
+      allow read: if isSignedIn() && (
+        isAdmin() || resource.data.buyerId == request.auth.uid || resource.data.supplierId == request.auth.uid
+      );
+      allow create: if isSignedIn() && isValidId(orderId) && (
+        isAdmin() || incoming().buyerId == request.auth.uid
+      );
+      allow update: if isSignedIn() && isValidId(orderId) && (
+        isAdmin() || existing().supplierId == request.auth.uid || existing().buyerId == request.auth.uid
+      );
+      allow delete: if isAdmin() && isValidId(orderId);
+    }
+
+    // Website Config & Visual Builder CMS
+    match /website_config/{configId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidId(configId);
+    }
+
+    // CMS Pages
+    match /cms_pages/{pageId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidId(pageId);
+    }
+
+    // Audit logs
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn() && isValidId(logId);
+      allow update, delete: if false;
+    }
+  }
+}
